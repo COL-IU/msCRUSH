@@ -59,7 +59,7 @@ void SplitCommands(int argc, char*argv[], string* title_prefix,
 int main (int argc, char *argv[]) {
   if (argc < 5) {
     cout << "Missing parameters, at least 5 params." << endl;
-    cout << "Usage: ./program_exe cs_title_prefix cs_path_prefix splash_clusters_name(s) file(s)." << endl;
+    cout << "Usage: ./generate_consensus_spectrum_for_splash cs_title_prefix cs_path_prefix splash_clusters_name(s) file(s)." << endl;
     return -1;
   }
   auto start_time_total = chrono::high_resolution_clock::now();
@@ -108,7 +108,7 @@ int main (int argc, char *argv[]) {
     charge = stoi(tmp.substr(tmp.find_last_of('c') + 1));
 
     ifstream inf(cluster_file);
-    ofstream ofs(cs_path_prefix + to_string(charge) + ".cs.mgf");
+    ofstream ofs(cs_path_prefix + "-c" + to_string(charge) + ".cs.mgf");
     string line, delimiter = ";";
     int cnt = 0;
 
