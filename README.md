@@ -25,7 +25,19 @@ Note that writing consensus spectra (cs) to disk in MGF format can be time consu
 3. Typical example: `./generate_consensus_spectrum_for_splash D01CS ../mgf/D01 ../mgf/clusters-c*.txt ../mgf/D01*part*.mgf`. You will find 5 MGF files, each of which match to a clustering file of a specific charge state.
 
 ## Citation
-TBD.
+```latex
+  @article {Wang308627,
+    author = {Wang, Lei and Li, Sujun and Tang, Haixu},
+    title = {SPLASH: fast tandem mass spectra clustering using locality sensitive hashing},
+    year = {2018},
+    doi = {10.1101/308627},
+    publisher = {Cold Spring Harbor Laboratory},
+    URL = {https://www.biorxiv.org/content/early/2018/04/25/308627},
+    eprint = {https://www.biorxiv.org/content/early/2018/04/25/308627.full.pdf},
+    journal = {bioRxiv}
+  }
+
+```
 
 ## Questions
 Please contact Lei Wang (wang558@indiana.edu) for assistance.
