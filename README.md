@@ -2,7 +2,7 @@
 
 
 ## Introduction
-SPLASH (standing for SPectrum clustering using LocAlity Sensitive Hashing) was developed by [Lei Wang](wang558@indiana.edu), [Sujun Li](sujli@indiana.edu) and [Haixu Tang*](hatang@indiana.edu), for the purpose of clustering large-scale tandem mass spectra (MS/MS spectra) and then generating high quality *consensus spectra* for clusters of similar MS/MS spectra. Multithreading is enabled in this package.
+SPLASH (standing for SPectrum clustering using LocAlity Sensitive Hashing) was developed by [Lei Wang](mailto:wang558@indiana.edu), [Sujun Li](https://scholar.google.com/citations?user=y4keCocAAAAJ&hl=en) and [Haixu Tang*](https://www.sice.indiana.edu/all-people/profile.html?profile_id=308), for the purpose of clustering large-scale tandem mass spectra (MS/MS spectra) and then generating high quality *consensus spectra* for clusters of similar MS/MS spectra. Multithreading is enabled in this package.
 SPLASH can take as input multiple MGF files (regular expression is supported) of spectra of multiple charge states (including spectra without charge). If the input MS/MS spectra come with multiple charge states, then a clustering result file will be created for each charge state. 
 ## Prerequisites
 g++ with version 5.1.0+ is required.
