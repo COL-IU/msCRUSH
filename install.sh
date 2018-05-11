@@ -1,17 +1,17 @@
 #!/bin/bash
 
 echo ""
-echo "Installing SPLASH."
+echo "Installing msCRUSH."
 
 CDIR=`pwd`
 TMPDIR="src/app"
 cd $TMPDIR
 
 echo 'Step 1:'
-bash compile_splash_on_general_charge.sh
+bash compile_mscrush_on_general_charge.sh
 echo ''
 echo 'Step 2:'
-bash compile_generate_consensus_spectrum_for_splash.sh
+bash compile_generate_consensus_spectrum_for_mscrush.sh
 
 cd $CDIR
 
@@ -29,8 +29,8 @@ fi
 
 
 
-mv $TMPDIR/splash_on_general_charge bin/
-mv $TMPDIR/generate_consensus_spectrum_for_splash bin/
+mv $TMPDIR/mscrush_on_general_charge bin/
+mv $TMPDIR/generate_consensus_spectrum_for_mscrush bin/
 
 echo ""
 echo "Executables are now installed under bin/"

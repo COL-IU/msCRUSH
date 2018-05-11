@@ -45,7 +45,7 @@ struct HyperParams
 };
 
 void PrintHyperParams(const HyperParams& params) {
-  cout << "************ LSH Cluster Params Setting ****************" << endl;
+  cout << "************ msCRUSH Cluster Params Setting ****************" << endl;
   cout << "cluster iteration: " << params.cluster_iteration << endl;
   cout << "cluster result prefix: " << params.result_prefix << endl;
   cout << "cluster result file path: " << params.result_path << endl;
@@ -62,7 +62,6 @@ void PrintHyperParams(const HyperParams& params) {
   cout << "select topk: " << params.select_topk << endl;
   cout << "threds to use: " << params.threads_to_use << endl;
   cout << "window size: " << params.window_mz << endl;
-  //cout << "consensus spectrum path: " << params.cs_path << endl;
   cout << "********************************************************" << endl;
 }
 
@@ -106,11 +105,6 @@ void SaveClusters(const vector<Spectrum* >& spectra_all,
 void p_lsh(vector<Spectrum*> *hash_values, vector<int>* hash_keys,
     hashTable& hash_table, vector<Spectrum*>* unknown_spectra, 
     int hash_func_num, int start_index, int end_index) {
-
-  //coutmutex.lock();
-  //cout << "Start: TID " << std::this_thread::get_id() << " with start index: " 
-  //  << start_index << ", end index: " << end_index << endl;
-  //coutmutex.unlock();
   auto start_time = chrono::high_resolution_clock::now();
 
   const int buckets = int(pow(2, hash_func_num));
@@ -129,53 +123,24 @@ void p_lsh(vector<Spectrum*> *hash_values, vector<int>* hash_keys,
     local_hash_values.push_back(unknown_spectra->at(i));
     local_hash_keys.push_back(key);
   }
-  //*hash_values = move(local_hash_values);
-  //*hash_keys = move(local_hash_keys);
-
   swap(*hash_values, local_hash_values);
   swap(*hash_keys, local_hash_keys);
-
-  //coutmutex.lock();
-  //auto end_time = chrono::high_resolution_clock::now();
-  //auto elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
-  //cout << "End: TID " << std::this_thread::get_id() << ", with secs: " << elapsed_read << endl;
-  //cout << hash_values->size() << "\t" << hash_keys->size() << endl; 
-  //coutmutex.unlock();
 }
 
 void merge_hashtable(vector<vector<Spectrum*>>* final_table, int hash_func_num,
     const vector<vector<Spectrum*>* >& part_hash_values,
     const vector<vector<int>* >& part_hash_keys) {
-
-  //cout << "into merge function" << endl;
-  auto start_time = chrono::high_resolution_clock::now();
-
   const int buckets = int(pow(2, hash_func_num));
-
   vector<vector<Spectrum*>> local_table(buckets, vector<Spectrum*>());
-  //local_table.reserve(buckets);
 
   for (int i = 0; i < part_hash_keys.size(); ++i) {
     for (int j = 0; j < part_hash_keys[i]->size(); ++j) {
       const auto& key = part_hash_keys[i]->at(j);
       const auto& ptr = part_hash_values[i]->at(j);
       local_table[key].push_back(ptr);
-      //cout << key << "\t" << ptr << endl;
     }
   }
-
-  //*final_table = move(local_table);
   swap(*final_table, local_table);
-
-  auto end_time = chrono::high_resolution_clock::now();
-  auto elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
-  //cout << "part hash values size: " << part_hash_values.size() << "\t" << part_hash_values.front()->size()<< endl;
-  //cout << "part hash keys size: " << part_hash_keys.size() << "\t" << part_hash_keys.front()->size()<< endl;
-  //cout << "hash functino number: " << hash_func_num << endl;
-  //cout << "local hash table: " << local_table.size() << endl;
-  //cout << "merge hash table takes: " << elapsed_read << endl;
-  //cout << "final table size: " << final_table->size() << endl;
-
 }
 
 
@@ -185,20 +150,12 @@ void merge_spectra(vector<Spectrum*>* final_spectra,
   for (const auto& spectra : part_spectra) {
     local_spectra.insert(local_spectra.end(), spectra->begin(), spectra->end());
   }
-  //*final_spectra = move(local_spectra);
   swap(*final_spectra, local_spectra);
 }
 
 void p_cluster(vector<Spectrum*>* part_spectra, HyperParams* params,
     vector<vector<Spectrum*>>* lsh_table,
     int start_pos, int end_pos, float threshold) {
-
-  //coutmutex.lock();
-  //std::cout << "Start: TID " << std::this_thread::get_id() << ", with start pos" 
-  //  << start_pos << ", end pos: " << end_pos << endl;
-  //coutmutex.unlock();
-
-  auto start_time = std::chrono::high_resolution_clock::now();
   
   vector<Spectrum*> local_spectra;
   float distance;
@@ -226,23 +183,17 @@ void p_cluster(vector<Spectrum*>* part_spectra, HyperParams* params,
             candidate._filtered_peaks, params->precision);
         if (1 - distance >= threshold) {
           Spectrum* s_new = new Spectrum();
-          //cout << "creating new addr: " << s_new << endl;
           component_titles =
             current._component_titles + ";" + candidate._component_titles;
           IO::SetConsensus(s_new, current, candidate, params->precision,
               params->select_topk, params->window_mz, params->min_mz,
               params->mz_scale, component_titles, component_titles);
-
-          //cout << "deleteing addr: " << candidates[i] << endl;
-          //cout << "deleteing addr: " << candidates[j] << endl;
           delete candidates[i];
           delete candidates[j];
-
           candidates[j] = s_new;
           candidates[i] = candidates[--size];
           candidates[size] = NULL;
           break;
-          //swap(candidates[i], candidates[--size]);
         }
       }
       if (j == i) {
@@ -252,20 +203,12 @@ void p_cluster(vector<Spectrum*>* part_spectra, HyperParams* params,
     local_spectra.insert(local_spectra.end(),
         candidates.begin(), candidates.begin() + size);
   }
-  //*part_spectra = move(local_spectra);
   swap(*part_spectra, local_spectra);
-
-  auto end_time = std::chrono::high_resolution_clock::now();
-  auto elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
-  //coutmutex.lock();
-  //cout << "End: TID " << std::this_thread::get_id() << ", with secs: " << elapsed_read << endl;
-  //coutmutex.unlock();
 }
 
 void SplitCommands(int argc, char*argv[], HyperParams* params,
     vector<string>* files) {
   for (int i = 1; i < argc; ++i) {
-    //params.cs_path = params.file_name + ".lsh." + to_string(params.precision) + "p." + to_string(params.min_similarity) + "t." + to_string(params.cluster_iteration) + "i." + to_string(params.hash_func_num) + "h.cs.mgf";
     if (1 == i) {
       (*params).threads_to_use = stoi(argv[i]);
     } else if (2 == i) {
@@ -388,7 +331,7 @@ void Cluster(vector<Spectrum*>* unknown_spectra, HyperParams& params,
   end_time = chrono::high_resolution_clock::now();
   elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(
       end_time - start_time_total).count();
-  cout << "SPLASH algorithm hash+cluster takes (secs): " << elapsed_read << endl;
+  cout << "msCRUSH algorithm hash+cluster takes (secs): " << elapsed_read << endl;
 
   // Save clusters.
   start_time = chrono::high_resolution_clock::now();
@@ -420,13 +363,13 @@ void Cluster(vector<Spectrum*>* unknown_spectra, HyperParams& params,
   // Report time for all the procedures done above.
   elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(
       end_time - start_time_total).count();
-  cout << "SPLASH algorithm in total takes (secs): " << elapsed_read << endl;
+  cout << "msCRUSH algorithm in total takes (secs): " << elapsed_read << endl;
 }
 
 int main (int argc, char *argv[]) {
   if (argc < 7) {
     cout << "Missing parameters, at least 7 params." << endl;
-    cout << "Usage: ./splash_on_general_charge threads_to_use hash_func_num iteration min_similarity result_prefix file(s)." << endl;
+    cout << "Usage: ./mscrush_on_general_charge threads_to_use hash_func_num iteration min_similarity result_prefix mgf_file(s)." << endl;
     return -1;
   }
 
@@ -465,15 +408,12 @@ int main (int argc, char *argv[]) {
       end_time - start_time).count();
   cout << "Loading spectra takes secs:\t" << elapsed_read << endl;
 
-  //cout << "Now we have #unknown spectra: " << unknown_spectra_size << endl;
   cout << "Now we have #unknown spectra: " << unknown_spectra.size() << endl;
 
   for (const auto& entry : map_spectra_by_charge) {
     cout << entry.first << " charge: " << entry.second.size() << endl; 
   }
 
-  // return 0;
-  
   // Store pointers of spectra w/o charge info.
   vector<Spectrum*> spectra_of_no_charge;
   for (const auto& idx : map_spectra_by_charge[-1]) {
@@ -518,7 +458,7 @@ int main (int argc, char *argv[]) {
   end_time = chrono::high_resolution_clock::now();
   elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(
       end_time - start_time_total).count();
-  cout << "In all, LSH takes: " << elapsed_read << endl;
+  cout << "In all, msCRUSH takes: " << elapsed_read << endl;
   cout << endl;
 
   return 0;
