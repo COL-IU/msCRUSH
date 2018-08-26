@@ -92,7 +92,7 @@ void SaveClusters(const vector<Spectrum* >& spectra_all,
     out << "ID\tTitles" << endl;
 
     for (int i = 0; i < spectra_all.size(); ++i) {
-      if (-1 == spectra_all[i]->_charge && !save_spectrum_of_no_charge) {
+      if (0 == spectra_all[i]->_charge && !save_spectrum_of_no_charge) {
         continue;
       }
       // Save w/o charge info.
@@ -349,7 +349,7 @@ void Cluster(vector<Spectrum*>* unknown_spectra, HyperParams& params,
   cout << "Releasing memory starts." << endl;
   (*spectra_of_no_charge).clear();
   for (int i = 0; i < (*unknown_spectra).size(); ++i) {
-    if (-1 == (*(*unknown_spectra)[i])._charge) {
+    if (0 == (*(*unknown_spectra)[i])._charge) {
       (*spectra_of_no_charge).push_back((*unknown_spectra)[i]);
     } else {
       delete (*unknown_spectra)[i];
@@ -416,7 +416,7 @@ int main (int argc, char *argv[]) {
 
   // Store pointers of spectra w/o charge info.
   vector<Spectrum*> spectra_of_no_charge;
-  for (const auto& idx : map_spectra_by_charge[-1]) {
+  for (const auto& idx : map_spectra_by_charge[0]) {
     spectra_of_no_charge.push_back(unknown_spectra[idx]);
   }
 
@@ -429,16 +429,18 @@ int main (int argc, char *argv[]) {
     }
     cout << "Cluster on spectra of charge +" << charge << endl;
 
-    cout << "Load spectra with charge +" << charge << endl;
+    cout << "Load spectra with charge +" << charge << ": ";
     vector<Spectrum*> unknown_spectra_of_interest;
     for (const int& idx : map_spectra_by_charge[charge]) {
       unknown_spectra_of_interest.push_back(unknown_spectra[idx]);
     }
+    cout << unknown_spectra_of_interest.size() << endl;
 
     // Load non-clusterd spectra with no charge info.
-    cout << "Load spectra with no charge info." << endl;
+    cout << "Load spectra with no charge(+0): ";
     unknown_spectra_of_interest.insert(unknown_spectra_of_interest.end(),
         spectra_of_no_charge.begin(), spectra_of_no_charge.end());
+    cout << spectra_of_no_charge.size() << endl;
 
     cout << "Starting to cluster." << endl;
     Cluster(&unknown_spectra_of_interest, params, &spectra_of_no_charge, 

@@ -13,7 +13,7 @@ class Peak {
   float _intensity;
   int _count;
 
-  Peak(): _mz(-1), _intensity(-1), _count(-1){}
+  Peak(): _mz(0), _intensity(0), _count(0){}
   ~Peak() {}
 
   Peak(const Peak& p) {
@@ -54,7 +54,7 @@ class EmbededPeak {
   int _count;
   int _idx;
 
-  EmbededPeak(): _idx(-1), _intensity(-1), _count(-1){}
+  EmbededPeak(): _idx(0), _intensity(0), _count(0){}
   ~EmbededPeak() {}
 
   EmbededPeak(const EmbededPeak& p) {

@@ -34,8 +34,8 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
   int i_peak = 0;
 
   string line, tmp, title = "default", peptide = "default";
-  int charge = -1;
-  float mz = -1, intensity = -1, precursor_mz = -1;
+  int charge = 0;
+  float mz = 0, intensity = 0, precursor_mz = 0;
 
   //TODO: 20ppm.  [abs(threotical - observed) / threotical] * 10^6.
   const float ppm = 20;
@@ -76,7 +76,8 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
       continue;
     }
     
-    peak_mz_remove_without_water = precursor_mz - 18./charge;
+    peak_mz_remove_without_water = 
+      precursor_mz - 18./(charge == 0 ? 1 : charge);
 
     precursor_peak_tol =  precursor_mz * ppm / 1000000;
     precursor_no_water_peak_tol = peak_mz_remove_without_water * ppm / 1000000;
@@ -102,11 +103,11 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
 
       // Take the natural logarithm of intensity, mitigating dominant peaks.
       if (peak_normalized) {
-        intensity = log(intensity);
+        intensity = intensity == 0 ? 0 : log(intensity);
       }
 
       // Filter out peaks out of mz range.
-      if (mz < min_mz || mz > max_mz || intensity < 0) {
+      if (mz < min_mz || mz > max_mz || intensity <= 0) {
         continue;
       }
 
@@ -136,11 +137,6 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
     // raw_peaks.clear();
     // filtered_peaks.clear();
 
-    //TODO(lei): Remove this block after testing.
-    //if (-1 == charge) {
-    //  title += "-noncharge";
-    //}
-
     Spectrum* spectrum = new Spectrum();
     SetSpectrum(spectrum, false, false, charge, 1, embeded_peaks, Peaks(),
         filtered_peaks, peptide, precursor_mz, title, title, top_peak_mz);
@@ -157,9 +153,9 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
     }
 
     // Reset charge, peptide, title, precursor_mz, intensity.
-    charge = -1;
-    precursor_mz = -1;
-    intensity = -1;
+    charge = 0;
+    precursor_mz = 0;
+    intensity = 0;
     peptide = "default";
     title = "default";
   }
@@ -351,7 +347,7 @@ void IO::SetConsensus(Spectrum* consensus,
   new_peaks.clear();
   // filtered_peaks.clear();
 
-  int charge = (-1 == s1._charge ? s2._charge: s1._charge);
+  int charge = (0 == s1._charge ? s2._charge: s1._charge);
   SetSpectrum(consensus, false, true, charge, total_count, embeded_peaks,
       new_peaks, filtered_peaks, "CONSENSUS_SPECTRUM_PEPTIDE",
       ave_precursor_mz, title, component_titles, top_peak_mz);

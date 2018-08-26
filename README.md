@@ -16,7 +16,7 @@ g++ with version 5.1.0+ is required.
 This process will cluster similar MS/MS spectra and then output to files the clusters containing the titles of spectra inside. If the input MS/MS spectra contain some spectra without charge, then these no-charge spectra will be clustered to spectra with charge (in the order of charge 2+, 3+, 4+, 5+, 1+, 6+, 7+, 8+, 9+, 10+ by default in msCRUSH) if their similarity is above threshold in each clustering iteration. 
 1. `cd bin`
 2. Usage: `./mscrush_on_general_charge [threads_to_use] [hash_func_num] [iteration] [min_similarity] [result_prefix] [mgf_file(s)].`
-3. Typical example: `./mscrush_on_general_charge 40 15 100 0.65 ../mgf/clusters ../mgf/D0*.mgf`. You will find 5 clustering result files with prefix *clusters* under directory `../mgf`.
+3. Typical example: `./mscrush_on_general_charge 40 15 100 0.65 ../mgf/clusters ../mgf/D01*part*.mgf`. You will find 5 clustering result files with prefix *clusters* under directory `../mgf`.
 
 ## Generate consensus spectra
 Note that writing consensus spectra (cs) to disk in MGF format can be time consuming, so if consensus spectra is needed, run scripts below.
