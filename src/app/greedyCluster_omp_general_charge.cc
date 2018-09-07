@@ -218,6 +218,10 @@ void SplitCommands(int argc, char*argv[], HyperParams* params,
     } else if (4 == i) {
       (*params).min_similarity = stof(argv[i]);
     } else if (5 == i) {
+      (*params).min_mz = stof(argv[i]);
+    } else if (6 == i) {
+      (*params).max_mz = stof(argv[i]);
+    } else if (7 == i) {
       (*params).result_prefix = string(argv[i]);
     } else {
       (*files).push_back(string(argv[i]));
@@ -367,9 +371,9 @@ void Cluster(vector<Spectrum*>* unknown_spectra, HyperParams& params,
 }
 
 int main (int argc, char *argv[]) {
-  if (argc < 7) {
-    cout << "Missing parameters, at least 7 params." << endl;
-    cout << "Usage: ./mscrush_on_general_charge threads_to_use hash_func_num iteration min_similarity result_prefix mgf_file(s)." << endl;
+  if (argc < 9) {
+    cout << "Missing parameters, at least 9 params." << endl;
+    cout << "Usage: ./mscrush_on_general_charge [threads_to_use] [hash_func_num] [iteration] [min_similarity] [min_mz] [max_mz] [result_prefix] [mgf_file(s)]." << endl;
     return -1;
   }
 

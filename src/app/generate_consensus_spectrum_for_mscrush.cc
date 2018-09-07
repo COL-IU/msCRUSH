@@ -10,26 +10,26 @@ using namespace Utility;
 //void WriteConsensusSpectrum(const Spectrum& spectrum, ofstream* ofs) {
 void WriteConsensusSpectrum(const Spectrum& spectrum, string title_prefix, 
     int index, int charge, ofstream* ofs) {
-  (*ofs) << "BEGIN IONS" << endl;
-  (*ofs) << "PEPMASS=" << spectrum._precursor_mz << endl;
+  (*ofs) << "BEGIN IONS" << "\n";
+  (*ofs) << "PEPMASS=" << spectrum._precursor_mz << "\n";
   if (0 != spectrum._charge && -1 != spectrum._charge) {
-    (*ofs) << "CHARGE=" << spectrum._charge <<"+" << endl;
+    (*ofs) << "CHARGE=" << spectrum._charge <<"+" << "\n";
   }
-  //(*ofs) << "TITLE=" << spectrum._title << endl;
+  //(*ofs) << "TITLE=" << spectrum._title << "\n";
   (*ofs) << "TITLE=" << title_prefix << "." << to_string(index) << "." <<
-    to_string(index) << "." << to_string(charge) << ".dta" << endl;
+    to_string(index) << "." << to_string(charge) << ".dta" << "\n";
   for (const auto& peak : spectrum._filtered_peaks) {
-    (*ofs) << peak._mz << "\t" << peak._intensity << endl;
+    (*ofs) << peak._mz << "\t" << peak._intensity << "\n";
   }
-  (*ofs) << "END IONS" << endl;
-  (*ofs) << endl;
+  (*ofs) << "END IONS" << "\n";
+  (*ofs) << "\n";
 }
 
 void WriteConsensusSpectra(const vector<Spectrum>& spectra, string title_prefix,
     int charge, ofstream* ofs) {
     for (int i = 0; i < spectra.size(); ++i) {
       if (i && i % 10000 == 0) {
-        cout << i << " write done." << endl;
+        cout << i << " write done." << "\n";
       }
       const auto& spectrum = (spectra[i]);
       //WriteConsensusSpectrum(spectrum, ofs);
@@ -50,7 +50,7 @@ void SplitCommands(int argc, char*argv[], string* title_prefix,
     } else if (string(argv[i]).rfind(".mgf") != string::npos){
       (*mgf_files).push_back(string(argv[i]));
     } else {
-      cout << "Errors splitting commands!" << endl;
+      cout << "Errors splitting commands!" << "\n";
       exit(-1);
     }
   }
@@ -58,8 +58,8 @@ void SplitCommands(int argc, char*argv[], string* title_prefix,
 
 int main (int argc, char *argv[]) {
   if (argc < 5) {
-    cout << "Missing parameters, at least 5 params." << endl;
-    cout << "Usage: ./generate_consensus_spectrum_for_mscrush cs_title_prefix cs_path_prefix mscrush_clusters_name(s) mgf_file(s)." << endl;
+    cout << "Missing parameters, at least 5 params." << "\n";
+    cout << "Usage: ./generate_consensus_spectrum_for_mscrush cs_title_prefix cs_path_prefix mscrush_clusters_name(s) mgf_file(s)." << "\n";
     return -1;
   }
   auto start_time_total = chrono::high_resolution_clock::now();
@@ -82,8 +82,8 @@ int main (int argc, char *argv[]) {
   int size = 0;
 
   for (int i = 0; i < mgf_files.size(); ++i) {
-    cout << "Loading spectra from mgf file: [" << i+1 <<  "/" << mgf_files.size() << "]" << endl;
-    cout << "file name: " << mgf_files[i] << endl;
+    cout << "Loading spectra from mgf file: [" << i+1 <<  "/" << mgf_files.size() << "]" << "\n";
+    cout << "file name: " << mgf_files[i] << "\n";
     IO::ReadSpectraFromMGF(&indexed_spectra, &map_spectra_by_charge,
         &map_ms_titles_to_index, &size, mgf_files[i], scale,
         min_mz, max_mz, precision, select_topk,
@@ -93,17 +93,17 @@ int main (int argc, char *argv[]) {
   auto end_time = chrono::high_resolution_clock::now();
   auto elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(
       end_time - start_time).count();
-  cout << "Loading spectra takes sec:\t" << elapsed_read << endl;
+  cout << "Loading spectra takes sec:\t" << elapsed_read << "\n";
 
-  //cout << "size: " << size << endl;
-  cout << "#read spectra: " << indexed_spectra.size() << endl;
+  //cout << "size: " << size << "\n";
+  cout << "#read spectra: " << indexed_spectra.size() << "\n";
 
   // Read clusters from file.
   start_time = chrono::high_resolution_clock::now();
   int file_cnt = 0;
   for (const string cluster_file : cluster_files) {
-    cout << "Generating CS for cluster file: [" << ++file_cnt <<  "/" << cluster_files.size() << "]" << endl;
-    cout << "file name:\t" << cluster_file << endl;
+    cout << "Generating CS for cluster file: [" << ++file_cnt <<  "/" << cluster_files.size() << "]" << "\n";
+    cout << "file name:\t" << cluster_file << "\n";
     string tmp = cluster_file.substr(0, cluster_file.rfind("."));
     charge = stoi(tmp.substr(tmp.find_last_of('c') + 1));
 
@@ -121,7 +121,7 @@ int main (int argc, char *argv[]) {
 
       Spectrum s_new;
       if (cnt + 1 % 100000 == 0) {
-        cout << cnt + 1 << " clustering done." << endl;
+        cout << cnt + 1 << " clustering done." << "\n";
       }
       while (getline(iss, token, ';')) {
         auto& candidate = *(indexed_spectra[map_ms_titles_to_index[token]]);
@@ -138,7 +138,7 @@ int main (int argc, char *argv[]) {
           cnt, charge, &ofs);
       ++cnt;
     }
-    cout << cnt << " clustering done." << endl;
+    cout << cnt << " clustering done." << "\n";
 
     ofs.close();
     inf.close();
@@ -148,9 +148,9 @@ int main (int argc, char *argv[]) {
   elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(
       end_time - start_time).count();
 
-  cout << "Writing consensus spectra done with secs:\t" << elapsed_read << endl;
+  cout << "Writing consensus spectra done with secs:\t" << elapsed_read << "\n";
 
-  cout << "Starting to release memory." << endl;
+  cout << "Starting to release memory." << "\n";
   
   start_time = chrono::high_resolution_clock::now();
   for (int i = 0; i < size; ++i) {
@@ -159,6 +159,6 @@ int main (int argc, char *argv[]) {
   end_time = chrono::high_resolution_clock::now();
   elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(
       end_time - start_time).count();
-  cout << "Completed releasing memory with secs:\t" << elapsed_read << endl;
+  cout << "Completed releasing memory with secs:\t" << elapsed_read << "\n";
   return 0;
 }

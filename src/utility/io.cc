@@ -9,7 +9,7 @@ float IO::convert(char const* source, char ** endPtr ) {
       char* start = end + 1;
       int right = strtol( start, &end, 10 );
       static double const fracMult[] 
-          = { 0.0, 0.1, 0.01, 0.001, 0.0001, 0.00001 };
+          = { 0.0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001 };
       results += right * fracMult[ end - start ];
   }
   if ( endPtr != nullptr ) {
