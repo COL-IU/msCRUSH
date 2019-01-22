@@ -31,8 +31,8 @@ Note that writing consensus spectra (cs) to disk in MGF format can be time consu
 2. Usage: `./generate_consensus_spectrum_for_mscrush <cs_title_prefix> <cs_path_prefix> <mscrush_clusters_name(s)> <mgf_file(s)>.`
 3. Typical example: `./generate_consensus_spectrum_for_mscrush D01CS ../mgf/D01 ../mgf/clusters-c*.txt ../mgf/D01*part*.mgf`. You will find 5 MGF files, each of which match to a clustering file of a specific charge state.
 
-## Paper Pointer
-[Link](https://www.biorxiv.org/content/early/2018/05/11/308627)
+## Citation
+[msCRUSH: Fast Tandem Mass Spectral Clustering Using Locality Sensitive Hashing](https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00448)
 <!---
 ## Citation
 ```latex
