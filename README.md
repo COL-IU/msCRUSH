@@ -13,10 +13,42 @@ g++ with version 5.1.0+ is required.
 3. Two executable files will be placed under *bin* directory: *mscrush_on_general_charge* for clustering similar spectra and *generate_consensus_spectrum_for_mscrush* for generating consensus spectra.
 
 ## Cluster similar spectra
-- This process will cluster similar MS/MS spectra and then output to files the clusters containing the titles of spectra inside. If the input MS/MS spectra contain some spectra without charge, then these no-charge spectra will be clustered to spectra with charge (in the order of charge 2+, 3+, 4+, 5+, 1+, 6+, 7+, 8+, 9+, 10+ by default in msCRUSH) if their similarity is above threshold in each clustering iteration. 
+- This process will cluster similar MS/MS spectra and then output to files the clusters containing the titles of spectra inside. If the input MS/MS spectra contain some spectra without charge, then these no-charge spectra will be clustered to spectra with charge (in the order of charge 2+, 3+, 4+, 5+, 1+, 6+, 7+, 8+, 9+, 10+ by default in msCRUSH) if their similarity is above preset clustering threshold in each respective clustering iteration. 
   1. `cd bin`
-  2. Usage: `./mscrush_on_general_charge <threads_to_use> <hash_func_num> <iteration> <min_similarity> <min_mz> <max_mz> <result_prefix> <mgf_file(s)>.`
-  3. Typical example: `./mscrush_on_general_charge 40 15 100 0.65 200 2000 ../mgf/clusters ../mgf/D01*part*.mgf`. You will find 5 clustering result files with prefix *clusters* under directory `../mgf`.
+  2. Usage: `./mscrush_on_general_charge -f mgf_files(s) [-t threads_to_use] [-n hash_func_num] [-i iteration] [-s min_similarity] [-l min_mz] [-r max_mz] [-c clustering_prefix] .`
+  3. Typical example: `./mscrush_on_general_charge -f ../mgf/D01*part*.mgf -t 40 -n 15 -i 100 -s 0.65 -l 200 -r 2000 -c ../clusters/clusters `. You will find clustering result files under the path specified through `-c` flag, in our case, it is 5 clustering result files with name prefix *clusters* under `../clusters`.
+  4. Description
+  Type `./mscrush_on_general_charge -h` to see full list of command options.
+        * -f,    --files (required)
+            > MGF files to cluster.
+        
+        * -i,    --iteration
+            > Clusbering iteration.
+            This parameter is optional. The default value is '100'.
+
+        * -n,    --hash
+            > Hash functions per hash table.
+     This parameter is optional. The default value is '15'.
+
+        * -t,    --thread
+            > Threads to use.
+     This parameter is optional. The default value is '20'.
+
+        * -l,    --min_mz
+            > Minimum cosine similalrity for clustering.
+     This parameter is optional. The default value is '200'.
+
+        * -r,    --max_mz
+            > Minimum cosine similalrity for clustering.
+     This parameter is optional. The default value is '2000'.
+
+        * -s,    --similarity
+            > Minimum cosine similalrity for clustering.
+     This parameter is optional. The default value is '0.65'.
+
+        * -c,    --clustering_prefix
+            > Clustering result file prefix.
+     This parameter is optional. The default value is 'clustering'.
 
 - It is very important to select proper paramters for msCRUSH to cluster similar spectra with high sensitivity and specificity. Specifically:
   1. `hash_func_num` controls the collision probability of two spectra in a single hash table, the more hash functions, the smaller collision probabiilty, the more clusters, the faster msCRUSH program. 10 is a good starting point for datasets with size less than 1 million, while 15 is a good starting point for datasets with size around 10 million.
@@ -28,8 +60,27 @@ g++ with version 5.1.0+ is required.
 ## Generate consensus spectra
 Note that writing consensus spectra (cs) to disk in MGF format can be time consuming, so if consensus spectra is needed, run scripts below.
 1. `cd bin`
-2. Usage: `./generate_consensus_spectrum_for_mscrush <cs_title_prefix> <cs_path_prefix> <mscrush_clusters_name(s)> <mgf_file(s)>.`
-3. Typical example: `./generate_consensus_spectrum_for_mscrush D01CS ../mgf/D01 ../mgf/clusters-c*.txt ../mgf/D01*part*.mgf`. You will find 5 MGF files, each of which match to a clustering file of a specific charge state.
+2. Usage: `./generate_consensus_spectrum_for_mscrush -c mscrush_cluster(s) -f mgf_files(s) [-t consensus_title] [-p consensus_path_prefix] [-d decimal_place].`
+3. Typical example: `./generate_consensus_spectrum_for_mscrush -c ../clusters/clusters-c*.txt -f ../mgf/D01*part*.mgf -d 7 -t CONSENSUS -p ../consensus/consensus`. You will find consensus spectra files, each of which matches to a clustering file of a specific charge state, in our case, it is 5 files with name prefix *consensus* under dir `../consensus`
+4. Description
+  Type `./generate_consensus_spectrum_for_mscrush -h` to see full list of command options.
+    * -c,    --clusters      (required)
+        > Clustering files by msCRUSH.
+
+    * -f,    --files (required)
+        > MGF files.
+        
+    * -d,    --decimal
+        > Decimal places for numbers.
+   This parameter is optional. The default value is '3'.
+
+    * -t,    --consensus_title
+        > Consensus spectrum title prefix.
+   This parameter is optional. The default value is 'CONSENSUS'.
+
+    * -p,    --consensus_path_prefix
+        > Consensus result file prefix to write into
+   This parameter is optional. The default value is 'consensus'.
 
 ## Citation
 [msCRUSH: Fast Tandem Mass Spectral Clustering Using Locality Sensitive Hashing](https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00448)
@@ -52,3 +103,4 @@ Note that writing consensus spectra (cs) to disk in MGF format can be time consu
 Please contact Lei Wang (wang558@indiana.edu) for assistance.
 ## Acknowledgement
 This work was supported by the NIH grant 1R01AI108888 and the Indiana University Precision Health Initiative.
+

@@ -8,83 +8,17 @@
 #include <string>
 #include <thread>
 
+#include "../class/hyperparams.h"
 #include "../class/params.h"
 #include "../class/spectrum.h"
 #include "../class/core.h"
 #include "../class/distance.h"
 #include "../utility/io.h"
+#include "../utility/cmdparser.h"
 
 using namespace Core;
 using namespace Utility;
 using namespace std;
-
-mutex coutmutex;
-
-struct HyperParams
-{
-  bool log_normalized;
-  bool remove_precursor;
-  float mass_tolerance;
-  float max_mz;
-  float min_mz;
-  float min_similarity;
-  float mz_scale;
-  float precision;
-  float shared_peak_mz_epsilon;
-  int cluster_iteration;
-  int hash_func_num;
-  int hash_dimension;
-  int rounds_num;
-  int select_topk;
-  int threads_to_use;
-  int window_mz;
-  string file_name;
-  string result_path;
-  string result_prefix;
-  string cs_path;
-};
-
-void PrintHyperParams(const HyperParams& params) {
-  cout << "************ msCRUSH Cluster Params Setting ****************" << endl;
-  cout << "cluster iteration: " << params.cluster_iteration << endl;
-  cout << "cluster result prefix: " << params.result_prefix << endl;
-  cout << "cluster result file path: " << params.result_path << endl;
-  cout << "hash dimension: " << params.hash_dimension << endl;
-  cout << "hash function num: " << params.hash_func_num << endl;
-  cout << "input file name: " << params.file_name << endl;
-  cout << "max mz: " << params.max_mz << endl;
-  cout << "min mz: " << params.min_mz << endl;
-  cout << "min similarity: " << params.min_similarity << endl;
-  cout << "mz scale : " << params.mz_scale<< endl;
-  cout << "precision: " << params.precision << endl;
-  cout << "precursor mass tolerance: " <<  params.mass_tolerance << endl;
-  cout << "shared peak mz epsilon: " << params.shared_peak_mz_epsilon << endl;
-  cout << "select topk: " << params.select_topk << endl;
-  cout << "threds to use: " << params.threads_to_use << endl;
-  cout << "window size: " << params.window_mz << endl;
-  cout << "********************************************************" << endl;
-}
-
-void SetHyperParams(HyperParams* params) {
-  (*params).cluster_iteration = 100;  //TODO: Tune this param.
-  (*params).hash_func_num = 10;
-  (*params).log_normalized = true;
-  (*params).mass_tolerance = 0.05;
-  (*params).max_mz = 2000;
-  (*params).min_mz = 200;
-  (*params).min_similarity = 0.65;  //TODO: Tune this param.
-  (*params).mz_scale = 1000;
-  (*params).precision = 0.8;  //TODO: Tune this param.
-  (*params).remove_precursor = false;
-  (*params).rounds_num = 4;
-  (*params).shared_peak_mz_epsilon = 0.2;
-  (*params).select_topk = 5;
-  (*params).threads_to_use = 20;
-  (*params).window_mz = 100;
-
-  (*params).hash_dimension = int(((*params).max_mz - (*params).min_mz) /
-    (*params).precision) + 1;
-}
 
 void SaveClusters(const vector<Spectrum* >& spectra_all,
     bool save_spectrum_of_no_charge, string out_file) {
@@ -100,7 +34,6 @@ void SaveClusters(const vector<Spectrum* >& spectra_all,
     }
     out.close();
 }
-
 
 void p_lsh(vector<Spectrum*> *hash_values, vector<int>* hash_keys,
     hashTable& hash_table, vector<Spectrum*>* unknown_spectra, 
@@ -127,11 +60,11 @@ void p_lsh(vector<Spectrum*> *hash_values, vector<int>* hash_keys,
   swap(*hash_keys, local_hash_keys);
 }
 
-void merge_hashtable(vector<vector<Spectrum*>>* final_table, int hash_func_num,
+void merge_hashtable(vector<vector<Spectrum*> >* final_table, int hash_func_num,
     const vector<vector<Spectrum*>* >& part_hash_values,
     const vector<vector<int>* >& part_hash_keys) {
   const int buckets = int(pow(2, hash_func_num));
-  vector<vector<Spectrum*>> local_table(buckets, vector<Spectrum*>());
+  vector<vector<Spectrum*> > local_table(buckets, vector<Spectrum*>());
 
   for (int i = 0; i < part_hash_keys.size(); ++i) {
     for (int j = 0; j < part_hash_keys[i]->size(); ++j) {
@@ -154,7 +87,7 @@ void merge_spectra(vector<Spectrum*>* final_spectra,
 }
 
 void p_cluster(vector<Spectrum*>* part_spectra, HyperParams* params,
-    vector<vector<Spectrum*>>* lsh_table,
+    vector<vector<Spectrum*> >* lsh_table,
     int start_pos, int end_pos, float threshold) {
   
   vector<Spectrum*> local_spectra;
@@ -174,7 +107,7 @@ void p_cluster(vector<Spectrum*>* part_spectra, HyperParams* params,
 
         // Filter using mass_tol and shared_top_peak.
         if (fabs(candidate._precursor_mz - current._precursor_mz) >
-          params->mass_tolerance || !current.shareTopPeaks(
+          params->precursor_mass_tolerance || !current.shareTopPeaks(
             candidate, params->shared_peak_mz_epsilon)) {
           continue;
         }
@@ -206,27 +139,15 @@ void p_cluster(vector<Spectrum*>* part_spectra, HyperParams* params,
   swap(*part_spectra, local_spectra);
 }
 
-void SplitCommands(int argc, char*argv[], HyperParams* params,
-    vector<string>* files) {
-  for (int i = 1; i < argc; ++i) {
-    if (1 == i) {
-      (*params).threads_to_use = stoi(argv[i]);
-    } else if (2 == i) {
-      (*params).hash_func_num = stoi(argv[i]);
-    } else if (3 == i) {
-      (*params).cluster_iteration = stoi(argv[i]);
-    } else if (4 == i) {
-      (*params).min_similarity = stof(argv[i]);
-    } else if (5 == i) {
-      (*params).min_mz = stof(argv[i]);
-    } else if (6 == i) {
-      (*params).max_mz = stof(argv[i]);
-    } else if (7 == i) {
-      (*params).result_prefix = string(argv[i]);
-    } else {
-      (*files).push_back(string(argv[i]));
-    }
-  }
+void ParseCommands(const cli::Parser& parser, HyperParams* params, 
+                   vector<string>* files) {
+    (*params).threads_to_use = parser.get<int>("t");
+    (*params).hash_func_num = parser.get<int>("n");
+    (*params).min_similarity = parser.get<float>("s");
+    (*params).min_mz = parser.get<float>("l");
+    (*params).max_mz = parser.get<float>("r");
+    (*params).clustering_file_prefix = parser.get<string>("c");
+    *files = parser.get<vector<string> >("f");
 }
 
 void Cluster(vector<Spectrum*>* unknown_spectra, HyperParams& params, 
@@ -235,20 +156,20 @@ void Cluster(vector<Spectrum*>* unknown_spectra, HyperParams& params,
   start_time = chrono::high_resolution_clock::now(), 
   end_time = chrono::high_resolution_clock::now();
 
-  auto elapsed_read = chrono::duration_cast<std::chrono::duration<double>>
+  auto elapsed_read = chrono::duration_cast<std::chrono::duration<double> >
     (end_time - start_time).count();
 
   float max_similarity = 0.9;  // Heuristics for maximum cosine similarity.
   float sim_step = (max_similarity - params.min_similarity) / 
-    params.cluster_iteration;
+    params.iteration;
   float threshold = max_similarity;
-  int cluster_iteration = 0;
-  vector<vector<Spectrum*>> lsh_table
+  int iteration = 0;
+  vector<vector<Spectrum*> > lsh_table
     (int(pow(2, params.hash_func_num)), vector<Spectrum*>());
 
-  while (cluster_iteration++ < params.cluster_iteration) {
+  while (iteration++ < params.iteration) {
     threshold -= sim_step;
-    cout << "Iteration:\t" << cluster_iteration << ", cos sim threshold:\t" 
+    cout << "Iteration:\t" << iteration << ", cos sim threshold:\t" 
       << threshold << endl;
 
     // Generate LSH.
@@ -292,7 +213,7 @@ void Cluster(vector<Spectrum*>* unknown_spectra, HyperParams& params,
     //part_table.clear();
 
     end_time = chrono::high_resolution_clock::now();
-    elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time_hashing).count();
+    elapsed_read = chrono::duration_cast<std::chrono::duration<double> >(end_time - start_time_hashing).count();
     cout << "hashing takes secs:\t" << elapsed_read << ", ";
 
     auto start_time_clustering = chrono::high_resolution_clock::now();
@@ -327,13 +248,13 @@ void Cluster(vector<Spectrum*>* unknown_spectra, HyperParams& params,
     }
 
     end_time = chrono::high_resolution_clock::now();
-    elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time_clustering).count();
+    elapsed_read = chrono::duration_cast<std::chrono::duration<double> >(end_time - start_time_clustering).count();
     cout << "clustering takes secs:\t" << elapsed_read << endl;
     cout << "#spectra after clustering: " << (*unknown_spectra).size() << endl;
     cout << endl;
   }
   end_time = chrono::high_resolution_clock::now();
-  elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(
+  elapsed_read = chrono::duration_cast<std::chrono::duration<double> >(
       end_time - start_time_total).count();
   cout << "msCRUSH algorithm hash+cluster takes (secs): " << elapsed_read << endl;
 
@@ -341,9 +262,9 @@ void Cluster(vector<Spectrum*>* unknown_spectra, HyperParams& params,
   start_time = chrono::high_resolution_clock::now();
   cout << "Saving cluster results starts: " << endl;
   //TODO(LEI): customize cluster file name.
-  SaveClusters(*unknown_spectra, false, params.result_prefix + "-c" + to_string(charge) + ".txt");
+  SaveClusters(*unknown_spectra, false, params.clustering_file_prefix + "-c" + to_string(charge) + ".txt");
   end_time = chrono::high_resolution_clock::now();
-  elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(
+  elapsed_read = chrono::duration_cast<std::chrono::duration<double> >(
       end_time - start_time).count();
   cout << "Save cluster results takes secs: " << elapsed_read << endl;
   
@@ -360,39 +281,52 @@ void Cluster(vector<Spectrum*>* unknown_spectra, HyperParams& params,
     }
   }
   end_time = chrono::high_resolution_clock::now();
-  elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(
+  elapsed_read = chrono::duration_cast<std::chrono::duration<double> >(
       end_time - start_time).count();
   cout << "Releasing memory takes: " << elapsed_read << endl;
 
   // Report time for all the procedures done above.
-  elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(
+  elapsed_read = chrono::duration_cast<std::chrono::duration<double> >(
       end_time - start_time_total).count();
   cout << "msCRUSH algorithm in total takes (secs): " << elapsed_read << endl;
 }
 
+void configure_parser(cli::Parser& parser) {  
+  parser.set_optional<int>("i", "iteration", 100, "Clusbering iteration.");
+  parser.set_optional<int>("n", "hash", 15, "Hash functions per hash table.");
+  parser.set_optional<int>("t", "thread", 20, "Threads to use.");
+
+  parser.set_optional<float>("l", "min_mz", 200, 
+                             "Minimum cosine similalrity for clustering.");
+  parser.set_optional<float>("r", "max_mz", 2000, 
+                             "Minimum cosine similalrity for clustering.");
+  parser.set_optional<float>("s", "similarity", 0.65, 
+                             "Minimum cosine similalrity for clustering.");
+
+  parser.set_optional<string>("c", "clustering_prefix", "clustering", 
+                              "Clustering result file prefix.");
+
+  parser.set_required<vector<string> >("f", "files", "MGF files to cluster.");
+}
+
 int main (int argc, char *argv[]) {
-  if (argc < 9) {
-    cout << "Missing parameters, at least 9 params." << endl;
-    cout << "Usage: ./mscrush_on_general_charge [threads_to_use] [hash_func_num] [iteration] [min_similarity] [min_mz] [max_mz] [result_prefix] [mgf_file(s)]." << endl;
-    return -1;
-  }
+  cli::Parser parser(argc, argv);
+  configure_parser(parser);
+  parser.run_and_exit_if_error();
 
   HyperParams params;
-  SetHyperParams(&params); 
 
   vector<string> files;
-  SplitCommands(argc, argv, &params, &files);
+  ParseCommands(parser, &params, &files);
 
-  PrintHyperParams(params);
+  cout << params << endl;
 
   auto start_time_total = chrono::high_resolution_clock::now();
 
   auto start_time = chrono::high_resolution_clock::now();
 
-  bool log_normalized = true, remove_precursor = true;
-
   vector<Spectrum*> unknown_spectra;
-  unordered_map<int, vector<int>> map_spectra_by_charge;
+  unordered_map<int, vector<int> > map_spectra_by_charge;
   unordered_map<string, int> map_ms_titles_to_index;
 
   int unknown_spectra_size = 0;
@@ -400,15 +334,15 @@ int main (int argc, char *argv[]) {
   for (int i = 0; i < files.size(); ++i) {
     cout << "Loading spectra from file: [" << i+1 <<  "/" << files.size() << "]" << endl;
     cout << "file name: " << files[i] << endl;
-    IO::ReadSpectraFromMGF(&unknown_spectra, &map_spectra_by_charge,
-        &map_ms_titles_to_index,
+    IO::ReadSpectraFromMGF(
+        &unknown_spectra, &map_spectra_by_charge, &map_ms_titles_to_index,
         &unknown_spectra_size, files[i], params.mz_scale,
         params.min_mz, params.max_mz, params.precision, params.select_topk,
-        params.window_mz, log_normalized, remove_precursor);
+        params.window_mz, params.log_normalized, params.remove_precursor);
   }
 
   auto end_time = chrono::high_resolution_clock::now();
-  auto elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(
+  auto elapsed_read = chrono::duration_cast<std::chrono::duration<double> >(
       end_time - start_time).count();
   cout << "Loading spectra takes secs:\t" << elapsed_read << endl;
 
@@ -453,7 +387,7 @@ int main (int argc, char *argv[]) {
 
   // Save clusters of spectra w/o charge info.
   cout << "Starting to save spectra w/o charge info." << endl;
-  SaveClusters(spectra_of_no_charge, true, params.result_prefix + "-c0.txt");
+  SaveClusters(spectra_of_no_charge, true, params.clustering_file_prefix + "-c0.txt");
 
   // Releasing memory of spectra w/o charge info.
   cout << "Releasing memory of spectra w/o charge info." << endl;
@@ -462,7 +396,7 @@ int main (int argc, char *argv[]) {
   }
 
   end_time = chrono::high_resolution_clock::now();
-  elapsed_read = chrono::duration_cast<std::chrono::duration<double>>(
+  elapsed_read = chrono::duration_cast<std::chrono::duration<double> >(
       end_time - start_time_total).count();
   cout << "In all, msCRUSH takes: " << elapsed_read << endl;
   cout << endl;
