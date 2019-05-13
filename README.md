@@ -50,6 +50,11 @@ g++ with version 5.1.0+ is required.
             > Clustering result file prefix.
      This parameter is optional. The default value is 'clustering'.
 
+        * -d,    --delimiter
+            > Delimiter to separate MS2 titles in clusters.
+     This parameter is optional. The default value is '|'.
+
+
 - It is very important to select proper paramters for msCRUSH to cluster similar spectra with high sensitivity and specificity. Specifically:
   1. `hash_func_num` controls the collision probability of two spectra in a single hash table, the more hash functions, the smaller collision probabiilty, the more clusters, the faster msCRUSH program. 10 is a good starting point for datasets with size less than 1 million, while 15 is a good starting point for datasets with size around 10 million.
   2. `iteration` controls the number of hash tables to use with the aim to increase the probabiilty of two similar spectra to collide in at least one hash table, the more iterations, the higher collision probability, the less clusters, the slower mcCRUSH program. 100 iterations is a good starting point to play with.
@@ -74,6 +79,10 @@ Note that writing consensus spectra (cs) to disk in MGF format can be time consu
         > Decimal places for numbers.
    This parameter is optional. The default value is '3'.
 
+    * -s,    --separator
+        > Delimiter to separate MS2 titles in clusters
+   This parameter is optional. The default value is '|'.
+
     * -t,    --consensus_title
         > Consensus spectrum title prefix.
    This parameter is optional. The default value is 'CONSENSUS'.
@@ -84,21 +93,7 @@ Note that writing consensus spectra (cs) to disk in MGF format can be time consu
 
 ## Citation
 [msCRUSH: Fast Tandem Mass Spectral Clustering Using Locality Sensitive Hashing](https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00448)
-<!---
-## Citation
-```latex
-    @article {Wang308627,
-      author = {Wang, Lei and Li, Sujun and Tang, Haixu},
-      title = {msCRUSH: fast tandem mass spectra clustering using locality sensitive hashing},
-      year = {2018},
-      doi = {10.1101/308627},
-      publisher = {Cold Spring Harbor Laboratory},
-      URL = {https://www.biorxiv.org/content/early/2018/04/25/308627},
-      eprint = {https://www.biorxiv.org/content/early/2018/04/25/308627.full.pdf},
-      journal = {bioRxiv}
-    }
-```
--->
+
 ## Questions
 Please contact Lei Wang (wang558@indiana.edu) for assistance.
 ## Acknowledgement

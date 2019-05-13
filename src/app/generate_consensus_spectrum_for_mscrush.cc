@@ -37,10 +37,16 @@ void WriteConsensusSpectra(const vector<Spectrum>& spectra, string title_prefix,
     }
 }
 
-void ParseCommands(const cli::Parser& parser, int *d, string* title_prefix,
-                   string* file_prefix, vector<string>* cluster_files,
-                   vector<string>* mgf_files) {
+void ParseCommands(
+    const cli::Parser& parser, 
+    int *d, 
+    char* separator,
+    string* title_prefix,
+    string* file_prefix, 
+    vector<string>* cluster_files,
+    vector<string>* mgf_files) {
   *d = parser.get<int>("d");
+  *separator = parser.get<string>("s")[0];
   *title_prefix = parser.get<string>("t");
   *file_prefix = parser.get<string>("p");
   *cluster_files = parser.get<vector<string> >("c");
@@ -49,10 +55,12 @@ void ParseCommands(const cli::Parser& parser, int *d, string* title_prefix,
 
 void configure_parser(cli::Parser& parser) {  
   parser.set_optional<int>("d", "decimal", 3, "Decimal places for numbers.");
-  parser.set_optional<string>("t", "consensus_title", "CONSENSUS", 
-                              "Consensus spectrum title prefix.");
   parser.set_optional<string>("p", "consensus_path_prefix", "consensus",
                               "Consensus result file prefix to write into");
+  parser.set_optional<string>("s", "separator", "|", 
+                            "Delimiter to separate MS2 titles in clusters");
+  parser.set_optional<string>("t", "consensus_title", "CONSENSUS", 
+                              "Consensus spectrum title prefix.");
 
   parser.set_required<vector<string> >("c", "clusters", 
                                       "Clustering files by msCRUSH.");
@@ -79,13 +87,15 @@ int main (int argc, char *argv[]) {
   auto start_time = chrono::high_resolution_clock::now();
 
   int charge, decimal_place;
+  char separator;
   string file_prefix, title_prefix;
   vector<string> mgf_files, cluster_files;
-  ParseCommands(parser, &decimal_place, &title_prefix, &file_prefix, 
+  ParseCommands(parser, &decimal_place, &separator, &title_prefix, &file_prefix, 
                 &cluster_files, &mgf_files);
 
   cout << fixed << showpoint;
   cout << setprecision(decimal_place);
+  cout << "Delimiter to separate MS2 titles in clusters: " << separator << endl;
 
   vector<Spectrum*> indexed_spectra;
   unordered_map<int, vector<int>> map_spectra_by_charge;
@@ -126,7 +136,7 @@ int main (int argc, char *argv[]) {
 
     ifstream inf(cluster_file);
     ofstream ofs(file_prefix + "-c" + to_string(charge) + ".mgf");
-    string line, delimiter = ";";
+    string line;
     int cnt = 0;
 
     // Skip header.
@@ -140,13 +150,13 @@ int main (int argc, char *argv[]) {
       if (cnt + 1 % 100000 == 0) {
         cout << cnt + 1 << " clustering done." << "\n";
       }
-      while (getline(iss, token, ';')) {
+      while (getline(iss, token, separator)) {
         auto& candidate = *(indexed_spectra[map_ms_titles_to_index[token]]);
-        if (s_new._title == "default") {
+        if (s_new._title == "NA") {
           s_new = candidate;
         } else {
           string component_titles =
-            s_new._component_titles + ";" + candidate._component_titles;
+            s_new._component_titles + separator + candidate._component_titles;
           IO::SetConsensus(
               &s_new, candidate, s_new, params.precision, params.select_topk,
               params.window_mz, params.min_mz, params.mz_scale,

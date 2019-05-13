@@ -42,8 +42,8 @@ class Spectrum {
   Peaks _raw_peaks;
   
   Spectrum(): _is_clustered(false), _is_consensus(false), _precursor_mz(0),
-  _charge(0), _count(1), _peptide("default"), _title("default"),
-  _component_titles("default") {};
+  _charge(0), _count(1), _peptide("NA"), _title("NA"),
+  _component_titles("NA") {};
 
   ~Spectrum() {}
 

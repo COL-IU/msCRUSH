@@ -33,7 +33,7 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
   Peaks filtered_peaks;  // Filtered peaks using bins.
   int i_peak = 0;
 
-  string line, tmp, title = "default", peptide = "default";
+  string line, tmp, title = "NA", peptide = "NA";
   int charge = 0;
   float mz = 0, intensity = 0, precursor_mz = 0;
 
@@ -156,8 +156,8 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
     charge = 0;
     precursor_mz = 0;
     intensity = 0;
-    peptide = "default";
-    title = "default";
+    peptide = "NA";
+    title = "NA";
   }
   //cout << "read #spectra: " << spectra_cnt << endl;
 

@@ -86,9 +86,14 @@ void merge_spectra(vector<Spectrum*>* final_spectra,
   swap(*final_spectra, local_spectra);
 }
 
-void p_cluster(vector<Spectrum*>* part_spectra, HyperParams* params,
+void p_cluster(
+    vector<Spectrum*>* part_spectra, 
+    HyperParams* params,
+    char delimiter,
     vector<vector<Spectrum*> >* lsh_table,
-    int start_pos, int end_pos, float threshold) {
+    int start_pos, 
+    int end_pos, 
+    float threshold) {
   
   vector<Spectrum*> local_spectra;
   float distance;
@@ -117,7 +122,7 @@ void p_cluster(vector<Spectrum*>* part_spectra, HyperParams* params,
         if (1 - distance >= threshold) {
           Spectrum* s_new = new Spectrum();
           component_titles =
-            current._component_titles + ";" + candidate._component_titles;
+            current._component_titles + delimiter + candidate._component_titles;
           IO::SetConsensus(s_new, current, candidate, params->precision,
               params->select_topk, params->window_mz, params->min_mz,
               params->mz_scale, component_titles, component_titles);
@@ -139,19 +144,27 @@ void p_cluster(vector<Spectrum*>* part_spectra, HyperParams* params,
   swap(*part_spectra, local_spectra);
 }
 
-void ParseCommands(const cli::Parser& parser, HyperParams* params, 
-                   vector<string>* files) {
-    (*params).threads_to_use = parser.get<int>("t");
-    (*params).hash_func_num = parser.get<int>("n");
-    (*params).min_similarity = parser.get<float>("s");
-    (*params).min_mz = parser.get<float>("l");
-    (*params).max_mz = parser.get<float>("r");
-    (*params).clustering_file_prefix = parser.get<string>("c");
-    *files = parser.get<vector<string> >("f");
+void ParseCommands(
+    const cli::Parser& parser, 
+    HyperParams* params, 
+    char* delimiter,
+    vector<string>* files) {
+  (*params).threads_to_use = parser.get<int>("t");
+  (*params).hash_func_num = parser.get<int>("n");
+  (*params).min_similarity = parser.get<float>("s");
+  (*params).min_mz = parser.get<float>("l");
+  (*params).max_mz = parser.get<float>("r");
+  (*params).clustering_file_prefix = parser.get<string>("c");
+  *delimiter = parser.get<string>("d")[0];
+  *files = parser.get<vector<string> >("f");
 }
 
-void Cluster(vector<Spectrum*>* unknown_spectra, HyperParams& params, 
-    vector<Spectrum*>* spectra_of_no_charge, int charge) {
+void Cluster(
+    vector<Spectrum*>* unknown_spectra, 
+    HyperParams& params, 
+    char delimiter,
+    vector<Spectrum*>* spectra_of_no_charge, 
+    int charge) {
   auto start_time_total = chrono::high_resolution_clock::now(), 
   start_time = chrono::high_resolution_clock::now(), 
   end_time = chrono::high_resolution_clock::now();
@@ -237,8 +250,8 @@ void Cluster(vector<Spectrum*>* unknown_spectra, HyperParams& params,
         buckets_to_do = lsh_table.size() - buckets_per_thread * i;
       }
 
-      p_cluster(part_spectra[i], &params, &lsh_table, start_pos,
-        start_pos + buckets_to_do, threshold);
+      p_cluster(part_spectra[i], &params, delimiter, &lsh_table, start_pos,
+                start_pos + buckets_to_do, threshold);
     }
 
     merge_spectra(unknown_spectra, part_spectra);
@@ -305,6 +318,8 @@ void configure_parser(cli::Parser& parser) {
 
   parser.set_optional<string>("c", "clustering_prefix", "clustering", 
                               "Clustering result file prefix.");
+  parser.set_optional<string>("d", "delimiter", "|", 
+                              "Delimiter to separate MS2 titles in clusters.");
 
   parser.set_required<vector<string> >("f", "files", "MGF files to cluster.");
 }
@@ -317,9 +332,11 @@ int main (int argc, char *argv[]) {
   HyperParams params;
 
   vector<string> files;
-  ParseCommands(parser, &params, &files);
+  char delimiter;
+  ParseCommands(parser, &params, &delimiter, &files);
 
   cout << params << endl;
+  cout << "Delimiter to separate MS2 titles: " << delimiter << endl;
 
   auto start_time_total = chrono::high_resolution_clock::now();
 
@@ -381,8 +398,8 @@ int main (int argc, char *argv[]) {
     cout << spectra_of_no_charge.size() << endl;
 
     cout << "Starting to cluster." << endl;
-    Cluster(&unknown_spectra_of_interest, params, &spectra_of_no_charge, 
-        charge);
+    Cluster(&unknown_spectra_of_interest, params, delimiter,  
+            &spectra_of_no_charge, charge);
   }
 
   // Save clusters of spectra w/o charge info.
