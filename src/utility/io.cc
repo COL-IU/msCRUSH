@@ -1,7 +1,7 @@
 #include "io.h"
 namespace Utility {
 
-float IO::convert(char const* source, char ** endPtr ) {
+inline float IO::convert(char const* source, char ** endPtr ) {
   char* end;
   int left = strtol( source, &end, 10 );
   float results = left;
@@ -9,7 +9,7 @@ float IO::convert(char const* source, char ** endPtr ) {
       char* start = end + 1;
       int right = strtol( start, &end, 10 );
       static double const fracMult[] 
-          = { 0.0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001 };
+          = { 0.0, 0.1, 0.01, 0.001, 1e-4f, 1e-5f, 1e-6f, 1e-7f, 1e-8f, 1e-9f};
       results += right * fracMult[ end - start ];
   }
   if ( endPtr != nullptr ) {
@@ -96,10 +96,16 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
         continue;
       }
 
+#ifdef FAST_PARSE
       // https://stackoverflow.com/questions/17465061/how-to-parse-space-separated-floats-in-c-quickly
-      char* end;
+      char* end = nullptr;
       mz = convert(line.c_str(), &end);
-      intensity = convert(end, &end);
+      intensity = convert(end, &end); 
+#else
+      char *end = nullptr;
+      mz = strtof(line.c_str(), &end);
+      intensity = strtof(end, nullptr);
+#endif
 
       // Take the natural logarithm of intensity, mitigating dominant peaks.
       if (peak_normalized) {
