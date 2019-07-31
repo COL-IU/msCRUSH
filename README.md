@@ -62,6 +62,26 @@ g++ with version 5.1.0+ is required.
   4. `min_mz` is the minimum mz to consider a peak. 
   5. `max_mz` is the maximum mz to consider a peak.
 
+
+- The output file locate in the `--clustering_prefix` folder, which holding all clusters with respective charge and each file should contains one line per cluster with the format like:   
+  ID    Titles    
+  0    042913-SludgeD1_13-18, Cmpd 25, +MSn(815.43), 0.07 min    
+  1    042913-SludgeD1_13-18, Cmpd 21300, +MSn(814.31), 47.09 min    
+  2    042913-SludgeD1_19-24, Cmpd 38786, +MSn(1351.9), 91.14 min    
+  3    042913-SludgeD1_13-18, Cmpd 37999, +MSn(1357.62), 90.13 min   
+  4    042913-SludgeD1_25-30, Cmpd 8384, +MSn(866.89), 19.79 min   
+  5    042913-SludgeD1_25-30, Cmpd 10087, +MSn(732.39), 22.75 min    
+          ...     
+  60    042913-SludgeD1_25-30, Cmpd 23895, +MSn(810.04), 51.89 min    
+  61    042913-SludgeD1_1-6, Cmpd 15070, +MSn(595.83), 35.72 min    
+  62	  042913-SludgeD1_19-24, Cmpd 6029, +MSn(931.71), 15.07 min   
+  63	  042913-SludgeD1_13-18, Cmpd 10135, +MSn(591.77), 23.32 min    
+  64	  042913-SludgeD1_25-30, Cmpd 21901, +MSn(639.34), 46.86 min|042913-SludgeD1_25-30, Cmpd 21979, +MSn(639.33), 47.07 min   
+  65    042913-SludgeD1_25-30, Cmpd 4893, +MSn(882.46), 12.13 min     
+          ...     
+  in which each line start with the cluster-id and a `--delimiter` separated list of the title of the spectra that belong to that cluster.    
+  
+  
 ## Generate consensus spectra
 Note that writing consensus spectra (cs) to disk in MGF format can be time consuming, so if consensus spectra is needed, run scripts below.
 1. `cd bin`
