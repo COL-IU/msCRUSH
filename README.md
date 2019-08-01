@@ -62,6 +62,24 @@ g++ with version 5.1.0+ is required.
   4. `min_mz` is the minimum mz to consider a peak. 
   5. `max_mz` is the maximum mz to consider a peak.
 
+
+- The generated clustering result files are located under dir specified by `--clustering_prefix`, with spectra of different charge placed respectively. Each line contains titles of all spectra associated with the cluster and separated by delimiter specified by `--delimiter`. Demo file looks like 
+```
+  ID      Titles
+  0       042913-SludgeD1_19-24, Cmpd 20425, +MSn(674.8651), 43.74 min
+  1       042913-SludgeD1_25-30, Cmpd 10133, +MSn(598.7913), 22.82 min
+  2       042913-SludgeD1_25-30, Cmpd 11763, +MSn(630.3059), 25.71 min
+  3       042913-SludgeD1_19-24, Cmpd 8840, +MSn(589.3099), 20.87 min
+  4       042913-SludgeD1_13-18, Cmpd 13886, +MSn(628.8416), 30.56 min
+  5       042913-SludgeD1_1-6, Cmpd 8349, +MSn(627.81), 21.64 min|042913-SludgeD1_19-24, Cmpd 10751, +MSn(627.8074), 24.36 min|042913-SludgeD1_13-18, Cmpd 10762, +MSn(627.8068), 24.48 min|042913-SludgeD1_25-30, Cmpd 11002, +MSn(627.8077), 24.40 min|042913-SludgeD1_1-6, Cmpd 8146, +MSn(627.807), 21.27 min|042913-SludgeD1_13-18,
+  Cmpd 10667, +MSn(627.8075), 24.31 min|042913-SludgeD1_1-6, Cmpd 8050, +MSn(627.81), 21.09 min
+  6       042913-SludgeD1_25-30, Cmpd 12189, +MSn(448.73), 26.50 min
+  7       042913-SludgeD1_13-18, Cmpd 17257, +MSn(802.9073), 37.23 min
+  8       042913-SludgeD1_19-24, Cmpd 11870, +MSn(728.3335), 26.33 min
+  9       042913-SludgeD1_13-18, Cmpd 7721, +MSn(604.8004), 18.76 min|042913-SludgeD1_1-6, Cmpd 7277, +MSn(604.799), 19.48 min
+```
+  
+  
 ## Generate consensus spectra
 Note that writing consensus spectra (cs) to disk in MGF format can be time consuming, so if consensus spectra is needed, run scripts below.
 1. `cd bin`
@@ -98,4 +116,3 @@ Note that writing consensus spectra (cs) to disk in MGF format can be time consu
 Please contact Lei Wang (wang558@indiana.edu) for assistance.
 ## Acknowledgement
 This work was supported by the NIH grant 1R01AI108888 and the Indiana University Precision Health Initiative.
-
