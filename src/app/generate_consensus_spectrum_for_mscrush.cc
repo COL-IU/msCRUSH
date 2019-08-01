@@ -10,30 +10,30 @@ using namespace Core;
 using namespace Utility;
 
 void WriteConsensusSpectrum(const Spectrum& spectrum, string title_prefix, 
-    int index, int charge, ofstream* ofs) {
-  (*ofs) << "BEGIN IONS" << "\n";
-  (*ofs) << "PEPMASS=" << spectrum._precursor_mz << "\n";
+    int index, int charge, ofstream* writer) {
+  (*writer) << "BEGIN IONS" << "\n";
+  (*writer) << "PEPMASS=" << spectrum._precursor_mz << "\n";
   if (0 != spectrum._charge && -1 != spectrum._charge) {
-    (*ofs) << "CHARGE=" << spectrum._charge <<"+" << "\n";
+    (*writer) << "CHARGE=" << spectrum._charge <<"+" << "\n";
   }
 
-  (*ofs) << "TITLE=" << title_prefix << "." << to_string(index) << "." <<
+  (*writer) << "TITLE=" << title_prefix << "." << to_string(index) << "." <<
     to_string(index) << "." << to_string(charge) << ".dta" << "\n";
   for (const auto& peak : spectrum._filtered_peaks) {
-    (*ofs) << peak._mz << "\t" << peak._intensity << "\n";
+    (*writer) << peak._mz << "\t" << peak._intensity << "\n";
   }
-  (*ofs) << "END IONS" << "\n";
-  (*ofs) << "\n";
+  (*writer) << "END IONS" << "\n";
+  (*writer) << "\n";
 }
 
 void WriteConsensusSpectra(const vector<Spectrum>& spectra, string title_prefix,
-    int charge, ofstream* ofs) {
+    int charge, ofstream* writer) {
     for (int i = 0; i < spectra.size(); ++i) {
       if (i && i % 10000 == 0) {
         cout << i << " write done." << "\n";
       }
       const auto& spectrum = (spectra[i]);
-      WriteConsensusSpectrum(spectrum, title_prefix, i, charge, ofs);
+      WriteConsensusSpectrum(spectrum, title_prefix, i, charge, writer);
     }
 }
 
@@ -134,15 +134,15 @@ int main (int argc, char *argv[]) {
     string tmp = cluster_file.substr(0, cluster_file.rfind("."));
     charge = stoi(tmp.substr(tmp.find_last_of('c') + 1));
 
-    ifstream inf(cluster_file);
-    ofstream ofs(file_prefix + "-c" + to_string(charge) + ".mgf");
+    ifstream reader(cluster_file);
+    ofstream writer(file_prefix + "-c" + to_string(charge) + ".mgf");
     string line;
     int cnt = 0;
 
     // Skip header.
-    getline(inf, line);
+    getline(reader, line);
 
-    while (getline(inf, line)) {
+    while (getline(reader, line)) {
       std::string token;
       istringstream iss(line.substr(line.find_first_of('\t') + 1));
 
@@ -163,13 +163,13 @@ int main (int argc, char *argv[]) {
               component_titles, component_titles);
         }
       }
-      WriteConsensusSpectrum(s_new, title_prefix, cnt, charge, &ofs);
+      WriteConsensusSpectrum(s_new, title_prefix, cnt, charge, &writer);
       ++cnt;
     }
     cout << cnt << " clustering done." << "\n";
 
-    ofs.close();
-    inf.close();
+    writer.close();
+    reader.close();
   }
 
   end_time = chrono::high_resolution_clock::now();

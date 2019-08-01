@@ -1,15 +1,19 @@
 #include "io.h"
 namespace Utility {
 
+
+static double const fracMult[] = { 0.0f, 1e-1f, 1e-2f, 1e-3f, 1e-4f, 1e-5f,
+    1e-6f, 1e-7f, 1e-8f, 1e-9f, 1e-10f, 1e-11f, 1e-12f, 1e-13f, 1e-14f, 1e-15f,
+    1e-16f, 1e-17f, 1e-18f, 1e-19f, 1e-20f};
+
 inline float IO::convert(char const* source, char ** endPtr ) {
   char* end;
-  int left = strtol( source, &end, 10 );
+  // Change from int to long long, as need large representation on HeLa dataset.
+  long long left = strtoll( source, &end, 10 );
   float results = left;
   if ( *end == '.' ) {
       char* start = end + 1;
-      int right = strtol( start, &end, 10 );
-      static double const fracMult[] 
-          = { 0.0, 0.1, 0.01, 0.001, 1e-4f, 1e-5f, 1e-6f, 1e-7f, 1e-8f, 1e-9f};
+      long long right = strtoll( start, &end, 10 );
       results += right * fracMult[ end - start ];
   }
   if ( endPtr != nullptr ) {
@@ -18,12 +22,19 @@ inline float IO::convert(char const* source, char ** endPtr ) {
   return results;
 }
 
-void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra, 
-    unordered_map<int, vector<int>>* map_spectra_by_charge,
+
+void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
+    unordered_map<int, vector<int> >* map_spectra_by_charge,
     unordered_map<string, int>* map_ms_titles_to_index,
-    int* spectra_size, string file_name, float scale, float min_mz,
+    int* spectra_size, string file, float scale, float min_mz,
     float max_mz, float precision, int topK, int bin_size,
     bool peak_normalized, bool remove_precursor, bool verbose) {
+
+  ifstream reader(file);
+  if (!reader.is_open()) {
+    cout << "Error! file not open!" << endl;
+    exit(-1);
+  }
 
   // Index shall follow next MS/MS spectrum already stored in indexed_spectra.
   const int spectra_cnt_stored = (*indexed_spectra).size();
@@ -31,26 +42,25 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
 
   Peaks raw_peaks (MAX_PEAK_SIZE);  // Pre-allocate memory.
   Peaks filtered_peaks;  // Filtered peaks using bins.
-  int i_peak = 0;
 
-  string line, tmp, title = "NA", peptide = "NA";
-  int charge = 0;
-  float mz = 0, intensity = 0, precursor_mz = 0;
+  string line, tmp;
 
-  //TODO: 20ppm.  [abs(threotical - observed) / threotical] * 10^6.
+  const string NA = "NA";
+  float mz, intensity, precursor_mz;
+  int charge, i_peak;
+  string peptide, protein, title;
+
+  //TODO(leiwang): 20ppm.  [abs(threotical - observed) / threotical] * 10^6.
   const float ppm = 20;
   float precursor_peak_tol = 0;
-  float precursor_no_water_peak_tol = 0; 
+  float precursor_no_water_peak_tol = 0;
   float peak_mz_remove_without_water = -1;
 
 
-  ifstream infile(file_name);
-  if (!infile.is_open()) {
-    cout << "Error! file not open!" << endl;
-    exit(-1);
-  }
+  Reset(&intensity, &precursor_mz, &charge, &i_peak, &peptide, &protein,
+        &title, NA, &filtered_peaks);
 
-  while (getline(infile, line)) {
+  while (getline(reader, line)) {
     // Handle text.
     if (line.empty() || line[0] == '#') {
       continue;
@@ -75,18 +85,13 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
     if (line[0] < '0' || line[0] > '9') {
       continue;
     }
-    
-    peak_mz_remove_without_water = 
+
+    peak_mz_remove_without_water =
       precursor_mz - 18./(charge == 0 ? 1 : charge);
 
     precursor_peak_tol =  precursor_mz * ppm / 1000000;
     precursor_no_water_peak_tol = peak_mz_remove_without_water * ppm / 1000000;
 
-    // Initialize stuff. 
-    // raw_peaks.clear();
-    i_peak = 0;
-    filtered_peaks.clear();
-    
     // Read peaks.
     do {
       if (string::npos != line.find(END_IONS_MGF)) {
@@ -100,7 +105,7 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
       // https://stackoverflow.com/questions/17465061/how-to-parse-space-separated-floats-in-c-quickly
       char* end = nullptr;
       mz = convert(line.c_str(), &end);
-      intensity = convert(end, &end); 
+      intensity = convert(end, &end);
 #else
       char *end = nullptr;
       mz = strtof(line.c_str(), &end);
@@ -128,7 +133,7 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
       // raw_peaks.push_back(Peak(mz, intensity));
       raw_peaks[i_peak++] = Peak(mz, intensity);
 
-    } while(getline(infile, line)); 
+    } while(getline(reader, line));
 
     BinTopKPeak(&filtered_peaks, raw_peaks, i_peak, topK, bin_size);
     RemoveAdjacentPeaks(&filtered_peaks, precision);
@@ -148,28 +153,40 @@ void IO::ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra,
         filtered_peaks, peptide, precursor_mz, title, title, top_peak_mz);
 
     (*indexed_spectra).push_back(spectrum);
-    
+
     (*map_spectra_by_charge)[charge].push_back(
         spectra_cnt_stored + spectra_cnt);
     (*map_ms_titles_to_index)[title] = spectra_cnt_stored + spectra_cnt;
-    
+
     ++spectra_cnt;
     if (verbose && 0 == spectra_cnt % 100000) {
       cout << "read #spectra: " << spectra_cnt << endl;
     }
 
-    // Reset charge, peptide, title, precursor_mz, intensity.
-    charge = 0;
-    precursor_mz = 0;
-    intensity = 0;
-    peptide = "NA";
-    title = "NA";
+    Reset(&intensity, &precursor_mz, &charge, &i_peak, &peptide, &protein,
+          &title, NA, &filtered_peaks);
+
   }
   //cout << "read #spectra: " << spectra_cnt << endl;
 
   (*spectra_size) = spectra_cnt;
-  //cout << "read #spectra: " << spectra_cnt << ", from: " << file_name << endl;
-  infile.close();
+  //cout << "read #spectra: " << spectra_cnt << ", from: " << file << endl;
+  reader.close();
+}
+
+void IO::Reset(float* intensity, float* precursor_mz,
+               int* charge, int* i_peak,
+               string* peptide, string* protein, string* title, string na,
+               Peaks* filtered_peaks) {
+  *intensity = 0.;
+  *precursor_mz = 0.;
+  *charge = 0;
+  *i_peak = 0;
+
+  *peptide = na;
+  *protein = na;
+  *title = na;
+  (*filtered_peaks).clear();
 }
 
 vector<float> IO::SelectTopPeakMZ(const Peaks& _peaks, int topK) {
@@ -214,7 +231,7 @@ void IO::RemoveAdjacentPeaks(Peaks* peaks, float mz_tolerance) {
   int i_read, i_write;
   for (i_write = 0, i_read = 1; i_read < (int)(*peaks).size(); ++i_read) {
     auto r_spectrum = (*peaks)[i_read];
-    auto& w_spectrum = (*peaks)[i_write]; 
+    auto& w_spectrum = (*peaks)[i_write];
     if (fabs(r_spectrum._mz - w_spectrum._mz) <= mz_tolerance) {
       if (r_spectrum._intensity > w_spectrum._intensity) {
         w_spectrum = r_spectrum;
@@ -248,7 +265,7 @@ void IO::Embed(EmbededPeaks* embeded_peaks, const Peaks& peaks,
 }
 
 void IO::MergeTwoPeaks (const Peaks& peaks1, const Peaks& peaks2, Peaks* peaks) {
-  
+
   int i = 0, j = 0;
   int i_len = peaks1.size(), j_len = peaks2.size();
   Peaks local_peaks;
@@ -287,7 +304,7 @@ void IO::MergeTwoPeaks (const Peaks& peaks1, const Peaks& peaks2, Peaks* peaks) 
 // Merge spectra to build a consensus spectrum.
 void IO::SetConsensus(Spectrum* consensus,
     const Spectrum& s1, const Spectrum& s2,
-    float precision, int topK, float bin_size, float min_mz, float scale, 
+    float precision, int topK, float bin_size, float min_mz, float scale,
     string title, string component_titles) {
 
   Peaks all_peaks, peaks1, peaks2;
@@ -334,7 +351,7 @@ void IO::SetConsensus(Spectrum* consensus,
       last_peak._intensity = sum_inten;
 
     } else {
-      // new_peaks.push_back(all_peaks[i]); 
+      // new_peaks.push_back(all_peaks[i]);
       new_peaks[++i_last] = all_peaks[i];
     }
   }
@@ -407,7 +424,7 @@ void IO::BinTopKPeak(Peaks* top_peaks, const Peaks& peaks, int peaks_size,
     int ele_num = min(i_current_peak, topK);
     //TODO: Should be .begin() + ele_num - 1.
     nth_element(current_peaks.begin(), current_peaks.begin() + ele_num - 1,
-        current_peaks.begin() + i_current_peak, cmp);   
+        current_peaks.begin() + i_current_peak, cmp);
     for (int i = 0; i < ele_num; ++i) {
       (*top_peaks)[i_write++] = current_peaks[i];
     }

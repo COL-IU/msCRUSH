@@ -21,18 +21,22 @@ using namespace Utility;
 using namespace std;
 
 void SaveClusters(const vector<Spectrum* >& spectra_all,
-    bool save_spectrum_of_no_charge, string out_file) {
-    ofstream out(out_file);
-    out << "ID\tTitles" << endl;
-
+    bool save_spectrum_of_no_charge, string file) {
+    ofstream writer(file);
+    writer << "ID\tTitles" << endl;
+    
+    int num_written = 0;
     for (int i = 0; i < spectra_all.size(); ++i) {
       if (0 == spectra_all[i]->_charge && !save_spectrum_of_no_charge) {
         continue;
       }
       // Save w/o charge info.
-      out << i << "\t" << spectra_all[i]->_component_titles << endl;
+      //writer << i << "\t" << spectra_all[i]->_component_titles << endl;
+      writer << num_written++ << "\t" << spectra_all[i]->_component_titles
+          << endl;
+      
     }
-    out.close();
+    writer.close();
 }
 
 void p_lsh(vector<Spectrum*> *hash_values, vector<int>* hash_keys,
@@ -274,7 +278,7 @@ void Cluster(
   // Save clusters.
   start_time = chrono::high_resolution_clock::now();
   cout << "Saving cluster results starts: " << endl;
-  //TODO(LEI): customize cluster file name.
+  //TODO(leiwang): customize cluster file name.
   SaveClusters(*unknown_spectra, false, params.clustering_file_prefix + "-c" + to_string(charge) + ".txt");
   end_time = chrono::high_resolution_clock::now();
   elapsed_read = chrono::duration_cast<std::chrono::duration<double> >(
@@ -316,7 +320,7 @@ void configure_parser(cli::Parser& parser) {
   parser.set_optional<float>("s", "similarity", 0.65, 
                              "Minimum cosine similalrity for clustering.");
 
-  parser.set_optional<string>("c", "clustering_prefix", "clustering", 
+  parser.set_optional<string>("c", "clustering_prefix", "cluster", 
                               "Clustering result file prefix.");
   parser.set_optional<string>("d", "delimiter", "|", 
                               "Delimiter to separate MS2 titles in clusters.");

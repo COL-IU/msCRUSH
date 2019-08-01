@@ -48,7 +48,7 @@ g++ with version 5.1.0+ is required.
 
         * -c,    --clustering_prefix
             > Clustering result file prefix.
-     This parameter is optional. The default value is 'clustering'.
+     This parameter is optional. The default value is 'cluster'.
 
         * -d,    --delimiter
             > Delimiter to separate MS2 titles in clusters.

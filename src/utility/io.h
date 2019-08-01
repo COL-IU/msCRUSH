@@ -28,14 +28,19 @@ using namespace Core;
 namespace Utility {
 class IO {
  public:
-  // Use customized char* to float converter, it can support up to precision
-  // 0.00001. Changes to [strtof] might be needed to handle higher precision.
+  // Use customized char* to float converter, it can support up to 20 decimal
+  // places. Changes to [strtof] might be needed to handle higher precision.
   static void ReadSpectraFromMGF(vector<Spectrum*>* indexed_spectra, 
       unordered_map<int, vector<int>>* map_spectra_by_charge,
       unordered_map<string, int>* map_ms_titles_to_index,
       int* spectra_size, string file_name, float scale, float min_mz,
       float max_mz, float precision, int select_topk, int window_mz,
       bool peak_normalized, bool remove_precursor, bool verbose=false);
+
+  static void Reset(float* intensity, float* precursor_mz,
+                    int* charge, int* i_peak,
+                    string* peptide, string* protein, string* title, string na,
+                    Peaks* filtered_peaks);
 
   // [Deprecated].
   static void ProcessSpectra(vector<Spectrum>* spectra, int start, int end,
@@ -82,7 +87,7 @@ class IO {
 
   static vector<float> SelectTopPeakMZ(const Peaks& peaks, int topK = 5);
   
-  // Customized char* to float converter, only work with precision up to 0.00001
+  // Customized char* to float converter, up to 20 decimal places.
   static float convert(char const* source, char ** endPtr);
 };
 
