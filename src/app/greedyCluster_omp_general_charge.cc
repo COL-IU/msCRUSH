@@ -155,6 +155,7 @@ void ParseCommands(
     vector<string>* files) {
   (*params).threads_to_use = parser.get<int>("t");
   (*params).hash_func_num = parser.get<int>("n");
+  (*params).iteration = parser.get<int>("i");
   (*params).min_similarity = parser.get<float>("s");
   (*params).min_mz = parser.get<float>("l");
   (*params).max_mz = parser.get<float>("r");
